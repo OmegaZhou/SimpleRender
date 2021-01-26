@@ -63,10 +63,10 @@ class Frame{
         this.antialiasing=b;
     }
     drawLine(p1:Vector2,p2:Vector2,color:Color){
-        let x1=Math.round(p1.x);
-        let x2=Math.round(p2.x);
-        let y1=Math.round(p1.y);
-        let y2=Math.round(p2.y);
+        let x1=Math.round(p1.x());
+        let x2=Math.round(p2.x());
+        let y1=Math.round(p1.y());
+        let y2=Math.round(p2.y());
         let steep=false
         if(Math.abs(x1-x2)<Math.abs(y1-y2)){
             [x1,y1]=[y1,x1];
@@ -92,10 +92,8 @@ class Frame{
                         this.Vague(x,y-dis);
                         need_vague=false
                     }else{
-                        if(derr!=0){
-                            this.Vague(x,y-dis);
-                            this.Vague(x,y+dis);
-                        }  
+                        this.Vague(x,y-dis);
+                        this.Vague(x,y+dis);
                     }
                 }
                 
@@ -108,11 +106,8 @@ class Frame{
                         this.Vague(y-dis,x);
                         need_vague=false
                     }else{
-                        if(derr!=0){
-                            this.Vague(y-dis,x);
-                            this.Vague(y+dis,x);
-                        }
-                        
+                        this.Vague(y-dis,x);
+                        this.Vague(y+dis,x);
                     }
                 }
                 

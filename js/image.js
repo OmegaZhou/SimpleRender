@@ -62,10 +62,10 @@ var Frame = /** @class */ (function () {
     };
     Frame.prototype.drawLine = function (p1, p2, color) {
         var _a, _b, _c, _d;
-        var x1 = Math.round(p1.x);
-        var x2 = Math.round(p2.x);
-        var y1 = Math.round(p1.y);
-        var y2 = Math.round(p2.y);
+        var x1 = Math.round(p1.x());
+        var x2 = Math.round(p2.x());
+        var y1 = Math.round(p1.y());
+        var y2 = Math.round(p2.y());
         var steep = false;
         if (Math.abs(x1 - x2) < Math.abs(y1 - y2)) {
             _a = [y1, x1], x1 = _a[0], y1 = _a[1];
