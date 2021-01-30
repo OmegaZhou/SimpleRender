@@ -9,6 +9,7 @@ class Color{
         this.green=green;
         this.blue=blue;
         this.alpha=alpha;
+        this.round()
     }
     add(color:Color){
         return new Color(this.red+color.red,this.green+color.green,this.blue+color.blue)
@@ -30,9 +31,9 @@ class Frame{
     height:number;
     antialiasing:Boolean=false;
     constructor(width:number,height:number){
-        for(var i=0;i<height;++i){
+        for(var i=0;i<width;++i){
             this.frame_buffer[i]=[];
-            for(var j=0;j<width;++j){
+            for(var j=0;j<height;++j){
                 this.frame_buffer[i][j]=new Color();
             }
         }
@@ -40,7 +41,7 @@ class Frame{
         this.height=height;
     }
     checkValid(x:number,y:number):Boolean{
-        return x>=0&&x<=this.width&&y>=0&&y<=this.height;
+        return x>=0&&x<this.width&&y>=0&&y<this.height;
     }
     showImage(){
         Canvas.showImage(this)
@@ -49,6 +50,7 @@ class Frame{
         if(!this.checkValid(x,y)){
             return;
         }
+        //console.log(x,y,color)
         this.frame_buffer[x][y]=color;
     }
     getColor(x:number,y:number){
@@ -84,7 +86,7 @@ class Frame{
         let error=0;
         let need_vague=false
         for(let x=x1,y=y1;x<=x2;++x){
-            if(steep){
+            if(!steep){
                 this.setPixel(x,y,color)
                 if(this.antialiasing){
                     if(need_vague){
@@ -120,6 +122,25 @@ class Frame{
             }
         }
 
+    }
+    drawTriangle(t:Triangle,getColor:(t:Triangle,x:number,y:number)=>Color){
+        const p1=t.v[0].position;
+        const p2=t.v[1].position;
+        const p3=t.v[2].position;
+        let x_min=Math.floor(Math.min(p1.x(),p2.x(),p3.x()));
+        let x_max=Math.ceil(Math.max(p1.x(),p2.x(),p3.x()));
+        let y_min=Math.floor(Math.min(p1.y(),p2.y(),p3.y()));
+        let y_max=Math.ceil(Math.max(p1.y(),p2.y(),p3.y()));
+        let k=true
+        for(let x=x_min;x<=x_max;++x){
+            for(let y=y_min;y<=y_max;++y){
+                if(t.isInside(x,y)){
+                    this.frame_buffer[x][y]=getColor(t,x,y);
+                    k=false
+                }
+            }
+            
+        }
     }
     private Vague(x:number,y:number){
         let my_color=this.getColor(x,y).multi(0.2)

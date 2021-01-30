@@ -26,10 +26,10 @@ class Canvas
                 var c=j;
                 var index=r*width+c;
                 index*=4;
-                image_data.data[index]=data[i][j].red
-                image_data.data[index+1]=data[i][j].green
-                image_data.data[index+2]=data[i][j].blue
-                image_data.data[index+3]=data[i][j].alpha
+                image_data.data[index]=data[j][i].red
+                image_data.data[index+1]=data[j][i].green
+                image_data.data[index+2]=data[j][i].blue
+                image_data.data[index+3]=data[j][i].alpha
             }
         }
         ctx.putImageData(image_data,0,0);
