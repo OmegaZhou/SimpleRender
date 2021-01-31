@@ -45,6 +45,9 @@ class Triangle extends Mesh {
     }
     isInside(x:number,y:number):boolean{
         let {alpha,bata,gamma}=this.getBarycentric(x,y);
+        return this.isInsidebyBarycentric(alpha,bata,gamma)
+    }
+    isInsidebyBarycentric(alpha:number,bata:number,gamma:number):boolean{
         return !(alpha<-EPSILON||bata<-EPSILON||gamma<-EPSILON)
     }
 }

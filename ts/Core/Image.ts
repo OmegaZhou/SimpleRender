@@ -30,6 +30,7 @@ class Frame{
     width:number;
     height:number;
     antialiasing:Boolean=false;
+    z_buffer:number[];
     constructor(width:number,height:number){
         for(var i=0;i<width;++i){
             this.frame_buffer[i]=[];
@@ -37,6 +38,7 @@ class Frame{
                 this.frame_buffer[i][j]=new Color();
             }
         }
+        this.z_buffer=new Array(width*height).fill(Number.MAX_VALUE)
         this.width=width;
         this.height=height;
     }
@@ -131,12 +133,18 @@ class Frame{
         let x_max=Math.ceil(Math.max(p1.x(),p2.x(),p3.x()));
         let y_min=Math.floor(Math.min(p1.y(),p2.y(),p3.y()));
         let y_max=Math.ceil(Math.max(p1.y(),p2.y(),p3.y()));
-        let k=true
         for(let x=x_min;x<=x_max;++x){
             for(let y=y_min;y<=y_max;++y){
-                if(t.isInside(x,y)){
-                    this.frame_buffer[x][y]=getColor(t,x,y);
-                    k=false
+                let {alpha,bata,gamma}=t.getBarycentric(x,y);
+                if(t.isInsidebyBarycentric(alpha,bata,gamma)){
+                    let z=p1.z()*alpha+p2.z()*bata+p3.z()*gamma
+                    
+                    let index=this.getIndex(x,y)
+                    if(this.z_buffer[index]>z){
+                        this.z_buffer[index]=z;
+                        this.frame_buffer[x][y]=getColor(t,x,y);
+                    }
+                    
                 }
             }
             
@@ -151,5 +159,8 @@ class Frame{
         my_color=my_color.add(c1).add(c2).add(c3).add(c4);
         my_color.round();
         this.setPixel(x,y,my_color);
+    }
+    private getIndex(x:number,y:number){
+        return x*this.width+y
     }
 }

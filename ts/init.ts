@@ -65,7 +65,7 @@ function upload()
                 let v0 = group[i].v[j]
                 let x0 = (v0.position.x()+1.)*width/2.; 
                 let y0 = (v0.position.y()+1.)*height/2.; 
-                v.push(new Vertex(new Vector3(x0,y0)))
+                v.push(new Vertex(new Vector3(x0,y0,-v0.position.z())))
             }
             //console.log(v)
             let t:Triangle=new Triangle(v[0],v[1],v[2])
