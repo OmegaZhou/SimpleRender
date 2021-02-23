@@ -32,7 +32,7 @@ class ImageTool {
                     //image_data.data[index + 2], image_data.data[index + 3])
             }
         }
-        console.log(image_data.data)
+        //console.log(image_data.data)
         return data;
     }
     static convertImgToData(img: HTMLImageElement) {

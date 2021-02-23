@@ -27,6 +27,17 @@ class Matrix{
         }
         return result
     }
+    print(){
+        console.log("Matrix:")
+        for(var i=0;i<this.r();++i){
+            var str='';
+            for(var j=0;j<this.c();++j){
+                str+=this.m_[i][j]+' ';
+            }
+            console.log(str);
+        }
+        console.log()
+    }
     val(x:number,y:number,value?:number){
         if(value){
             this.m_[x][y]=value;
@@ -123,13 +134,17 @@ class Vector{
             this.v_.val(i,0,tmp/norm);
         }
     }
-    norm(){
+    squaredNorm(){
         let result=0;
         let r=this.v_.r()
         for(let i=0;i<r;++i){
             result+= Math.pow(this.v_.val(i,0),2);
         }
-        return Math.sqrt(result)
+        return result
+    }
+    norm(){
+        
+        return Math.sqrt(this.squaredNorm())
     }
     static clone<T extends Vector>(vec:T):T{
         let tmp = new Vector();
@@ -159,7 +174,7 @@ class Vector{
         tmp.v_=new Matrix(a.v_.r(),1);
         let r=a.v_.r()
         for(let i=0;i<r;++i){
-            if(b instanceof Number){
+            if(!(b instanceof Vector)){
                 tmp.v_.val(i,0,a.v_.val(i,0)*<number>b)
             }else{
                 tmp.v_.val(i,0,a.v_.val(i,0)*(<T>b).v_.val(i,0))
@@ -173,7 +188,7 @@ class Vector{
         tmp.v_=new Matrix(a.v_.r(),1);
         let r=a.v_.r()
         for(let i=0;i<r;++i){
-            if(b instanceof Number){
+            if(!(b instanceof Vector)){
                 tmp.v_.val(i,0,a.v_.val(i,0)/<number>b)
             }else{
                 tmp.v_.val(i,0,a.v_.val(i,0)/(<T>b).v_.val(i,0))
@@ -212,10 +227,22 @@ class Vector3 extends Vector{
     static dotProduct(a:Vector3,b:Vector3):number{
         return a.x()*b.x()+a.y()*b.y()+a.z()*b.z();
     }
+    static cwiseProduct(a:Vector3,b:Vector3):Vector3{
+        return new Vector3(a.x()*b.x(),a.y()*b.y(),a.z()*b.z());
+    }
+    static toVector4(a:Vector3,w:number=1):Vector4{
+        return new Vector4(a.x(),a.y(),a.z(),w);
+    }
 }
 class Vector4 extends Vector{
     constructor(x:number=0,y:number=0,z:number=0,w:number=0){
         super(x,y,z,w)
     }
-    
+    static toVector3(a:Vector4):Vector3{
+        var w=a.w();
+        if(Math.abs(w)<EPSILON){
+            w=1;
+        }
+        return new Vector3(a.x()/w,a.y()/w,a.z()/w);
+    }
 }

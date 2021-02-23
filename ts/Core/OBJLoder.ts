@@ -8,6 +8,7 @@ class ObjLoader {
 		}
 	}
 	private model:Model = new Model;
+	
 	private parsePoint(line_items: string[]) {
 		const x = line_items.length >= 2 ? parseFloat(line_items[1]) : 0.0;
 		const y = line_items.length >= 3 ? parseFloat(line_items[2]) : 0.0;
@@ -18,14 +19,16 @@ class ObjLoader {
 		const x = line_items.length >= 2 ? parseFloat(line_items[1]) : 0.0;
 		const y = line_items.length >= 3 ? parseFloat(line_items[2]) : 0.0;
 		const z = line_items.length >= 4 ? parseFloat(line_items[3]) : 0.0;
-		this.model.normals.push(new Vector3(x,y,z))
+		var n=new Vector3(x,y,z)
+		n.normalized()
+		this.model.normals.push(n)
 	}
 	private parseTexture(line_items: string[]) {
 		const x = line_items.length >= 2 ? parseFloat(line_items[1]) : 0.0;
 		const y = line_items.length >= 3 ? parseFloat(line_items[2]) : 0.0;
 		this.model.texture_coords.push(new Vector2(x,y))
 	}
-	private parseMesh(line_items: string[]){
+	private parseMesh(line_items: string[],texture:Texture){
 		const v_len=line_items.length-1;
 		let v=[]
 		for(let i=1;i<=v_len;++i){
@@ -35,9 +38,9 @@ class ObjLoader {
 			var c=parseInt(v_infos[2]);
 			v.push(new Vertex(this.model.point_coords[a-1],this.model.normals[c-1],this.model.texture_coords[b-1]));
 		}
-		this.model.meshes_group.push(new Triangle(v[0],v[1],v[2]))
+		this.model.meshes_group.push(new Triangle(v[0],v[1],v[2],texture))
 	}
-	loadModel(obj: String) {
+	loadModel(obj: String,texture:Texture) {
 		let lines: string[] = obj.split('\n')
 		let len = lines.length;
 		for (let i = 0; i < len; ++i) {
@@ -54,7 +57,7 @@ class ObjLoader {
 					this.parseTexture(line_items);
 					break;
 				case "f":
-					this.parseMesh(line_items);
+					this.parseMesh(line_items,texture);
 					break;
 				default:
 					break;

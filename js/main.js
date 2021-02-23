@@ -1,5 +1,10 @@
 "use strict";
+var scene;
 function init() {
+    var p = new Vector4(1, 1, 1, 1);
+    var m = Matrix.createMatrix([[1, 2, 2, 1], [0, 1, 2, 0], [0, 0, 1, 3], [1, 1, 1, 1]]);
+    p = m.multi(p);
+    console.log(p.x(), p.y(), p.z(), p.w());
     /**var frame = new Frame(300, 300);
 
     frame.drawLine(new Vector2(0, 0), new Vector2(70, 210), new Color(255, 0, 0));
@@ -17,12 +22,12 @@ function init() {
         context.strokeStyle = '#FF0000';  //设置线的颜色状态
         context.stroke();               //进行绘制
     }*/
-    let frame = new Frame(300, 300);
-    var t = new Triangle(new Vertex(new Vector3(10, 10, 0)), new Vertex(new Vector3(100, 30, 0)), new Vertex(new Vector3(190, 160, 0)));
-    frame.drawTriangle(t, (t, x, y) => {
-        return new Color(255, 0, 0);
-    });
-    frame.showImage();
+    /*let frame=new Frame(300,300);
+    var t=new Triangle(new Vertex(new Vector3(10,10,0)),new Vertex(new Vector3(100, 30,0)),new Vertex(new Vector3(190, 160,0)))
+    frame.drawTriangle(t,(t:Triangle,x:number,y:number)=>{
+        return new Color(255,0,0);
+    })
+    frame.showImage();*/
     /*let ctx=Canvas.getCtx()
     Canvas.setWindowSize(512,512)
     ctx.drawImage(<HTMLImageElement>document.getElementById("img"),0,0,512,512)*/
@@ -42,64 +47,69 @@ function upload() {
     file_reader.onload = (e) => {
         var str = new String(file_reader.result);
         let loader = new ObjLoader();
-        loader.loadModel(str);
+        loader.loadModel(str, texture);
         let model = loader.getModel();
         console.timeEnd("Load model");
         let group = model.meshes_group;
         let width = 720;
         let height = 720;
-        var frame = new Frame(width, height);
-        //frame.setAntialiase(true)
-        for (let i = 0; i < group.length; i++) {
-            /*for (let j=0; j<3; j++) {
-                let v0 = group[i].v[j]
-                let v1 = group[i].v[(j+1)%3];
-                let x0 = (v0.position.x()+1)*width/2.;
-                let y0 = (v0.position.y()+1.)*height/2.;
-                let x1 = (v1.position.x()+1.)*width/2.;
-                let y1 = (v1.position.y()+1.)*height/2.;
-                frame.drawLine(new Vector2(x0,y0),new Vector2(x1,y1),new Color(0,0,0));
-            }*/
-            let v = [];
-            for (let j = 0; j < 3; j++) {
-                let v0 = group[i].v[j];
-                let x0 = (v0.position.x() + 1.) * width / 2.;
-                let y0 = (v0.position.y() + 1.) * height / 2.;
-                v.push(new Vertex(new Vector3(x0, y0, -v0.position.z()), v0.normal, v0.texture_coordinate));
-            }
-            //console.log(v)
-            let t = new Triangle(v[0], v[1], v[2]);
-            //let color=new Color(Math.random()*255,Math.random()*255,Math.random()*255); 
-            //let color=new Color(255,0,0)
-            frame.drawTriangle(t, (t, x, y) => {
-                const p1 = t.v[0].position;
-                const p2 = t.v[1].position;
-                const p3 = t.v[2].position;
-                const c1 = t.v[0].texture_coordinate;
-                const c2 = t.v[1].texture_coordinate;
-                const c3 = t.v[2].texture_coordinate;
-                let { alpha, bata, gamma } = t.getBarycentric(x, y);
-                if (c1 == null || c2 == null || c3 == null) {
-                    return new Color();
-                }
-                else {
-                    /*let color1=texture.getColor(c1.x(),c1.y())
-                    let color2=texture.getColor(c2.x(),c2.y())
-                    let color3=texture.getColor(c3.x(),c3.y())
-                    let result=color1.multi(alpha).add(color2.multi(bata).add(color3.multi(gamma)))
-                    result.round();
-                    return result*/
-                    let u = c1.x() * alpha + c2.x() * bata + c3.x() * gamma;
-                    let v = c1.y() * alpha + c2.y() * bata + c3.y() * gamma;
-                    return texture.getColor(u, v);
-                }
-            });
-        }
-        frame.showImage();
-        //console.log(file_reader.result)
-        console.log(count);
+        var scene = new Scene(width, height);
+        scene.addModel(model);
+        //console.log("sss")
+        scene.drawModels();
     };
-    //console.log(file)
+    /*var frame = new Frame(width, height);
+    //frame.setAntialiase(true)
+    for (let i=0; i<group.length; i++) {
+        
+        for (let j=0; j<3; j++) {
+            let v0 = group[i].v[j]
+            let v1 = group[i].v[(j+1)%3];
+            let x0 = (v0.position.x()+1)*width/2.;
+            let y0 = (v0.position.y()+1.)*height/2.;
+            let x1 = (v1.position.x()+1.)*width/2.;
+            let y1 = (v1.position.y()+1.)*height/2.;
+            frame.drawLine(new Vector2(x0,y0),new Vector2(x1,y1),new Color(0,0,0));
+        }
+        let v=[]
+        
+        for (let j=0; j<3; j++) {
+            let v0 = group[i].v[j]
+            let x0 = (v0.position.x()+1.)*width/2.;
+            let y0 = (v0.position.y()+1.)*height/2.;
+            v.push(new Vertex(new Vector3(x0,y0,v0.position.z()),v0.normal,v0.texture_coordinate))
+        }
+        //console.log(v)
+        let t:Triangle=new Triangle(v[0],v[1],v[2],texture)
+        //let color=new Color(Math.random()*255,Math.random()*255,Math.random()*255);
+        //let color=new Color(255,0,0)
+        frame.drawTriangle(t,(t:Triangle,x:number,y:number)=>{
+            const p1=t.v[0].position;
+            const p2=t.v[1].position;
+            const p3=t.v[2].position;
+            const c1=t.v[0].texture_coordinate
+            const c2=t.v[1].texture_coordinate
+            const c3=t.v[2].texture_coordinate
+            let {alpha,bata,gamma}=t.getBarycentric(x,y);
+            if(c1==null||c2==null||c3==null){
+                return new Color()
+            }else{
+                let color1=texture.getColor(c1.x(),c1.y())
+                let color2=texture.getColor(c2.x(),c2.y())
+                let color3=texture.getColor(c3.x(),c3.y())
+                let result=color1.multi(alpha).add(color2.multi(bata).add(color3.multi(gamma)))
+                result.round();
+                return result
+                let u=c1.x()*alpha+c2.x()*bata+c3.x()*gamma
+                let v=c1.y()*alpha+c2.y()*bata+c3.y()*gamma
+                return texture.getColor(u,v);
+            }
+        })
+    }
+    frame.showImage()
+    //console.log(file_reader.result)
+}
+//console.log(file)*/
 }
 var texture;
 function uploadImg() {
@@ -130,17 +140,71 @@ function uploadImg() {
 class Camera {
     constructor(position, eye_fov, z_near, z_far) {
         this.position = Vector.clone(position);
-        this.rotation_matrix = Matrix.createMatrix([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]);
+        this.model_matrix = Matrix.createMatrix([[2.5, 0, 0, 0], [0, 2.5, 0, 0], [0, 0, 2.5, 0], [0, 0, 0, 1]]);
+        this.inverse_transpose_model = Matrix.createMatrix([[1 / 2.5, 0, 0, 0], [0, 1 / 2.5, 0, 0], [0, 0, 1 / 2.5, 0], [0, 0, 0, 1]]);
         this.eye_fov = eye_fov;
         this.z_near = z_near;
         this.z_far = z_far;
+        this.setProjection(eye_fov, z_near, z_far, 1);
+        this.setView(this.position);
+        this.rotationByY(40);
+    }
+    rotationByY(angle) {
+        angle = angle / 180 * PI;
+        var cos_v = Math.cos(angle);
+        var sin_v = Math.sin(angle);
+        var model = Matrix.createMatrix([[cos_v, 0, sin_v, 0], [0, 1, 0, 0], [-sin_v, 0, cos_v, 0], [0, 0, 0, 1]]);
+        var inverse_transpose_model = Matrix.createMatrix([[cos_v, 0, sin_v, 0], [0, 1, 0, 0], [-sin_v, 0, cos_v, 0], [0, 0, 0, 1]]);
+        this.model_matrix = model.multi(this.model_matrix);
+        this.inverse_transpose_model = inverse_transpose_model.multi(this.inverse_transpose_model);
+    }
+    setProjection(eye_fov, z_near, z_far, aspect_ratio) {
+        var angle = eye_fov / 180 * PI;
+        var high = Math.tan(angle / 2) * z_near * 2;
+        console.log(high);
+        var width = high * aspect_ratio;
+        var length = z_far - z_near;
+        var proj = Matrix.createMatrix([[z_near, 0, 0, 0], [0, z_near, 0, 0], [0, 0, z_near + z_far, -z_far * z_near], [0, 0, 1, 0]]);
+        var move = Matrix.createMatrix([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, -(z_near + z_far) / 2], [0, 0, 0, 1]]);
+        var ortho = Matrix.createMatrix([[2 / width, 0, 0, 0], [0, 2 / high, 0, 0], [0, 0, 2 / length, 0], [0, 0, 0, 1]]);
+        this.proj = ortho.multi(move).multi(proj);
+    }
+    setView(position) {
+        var x = position.x();
+        var y = position.y();
+        var z = position.z();
+        this.view = Matrix.createMatrix([[1, 0, 0, -x], [0, 1, 0, -y], [0, 0, 1, -z], [0, 0, 0, 1]]);
+        this.inverse_view = Matrix.createMatrix([[1, 0, 0, x], [0, 1, 0, y], [0, 0, 1, z], [0, 0, 0, 1]]);
+        this.inverse_transpose_view = Matrix.createMatrix([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [x, y, z, 1]]);
     }
     setPosition(new_position) {
         this.position = Vector.clone(new_position);
     }
+    getProjection() {
+        return this.proj;
+    }
+    getView() {
+        return this.view;
+    }
+    getInverseTransposeView() {
+        return this.inverse_transpose_view;
+    }
+    getModel() {
+        return this.model_matrix;
+    }
+    getInverseTransposeModel() {
+        return this.inverse_transpose_model;
+    }
+    getPosition() {
+        return this.position;
+    }
 }
 class Color {
     constructor(red = 255, green = 255, blue = 255, alpha = 255) {
+        /*this.red = Math.min(Math.max(0,red),255);
+        this.green = Math.min(Math.max(0,green),255);
+        this.blue = Math.min(Math.max(0,blue),255);
+        this.alpha = Math.min(Math.max(0,alpha),255);*/
         this.red = red;
         this.green = green;
         this.blue = blue;
@@ -256,23 +320,84 @@ class Frame {
             }
         }
     }
-    drawTriangle(t, getColor) {
+    drawTriangle(info, shader, eye_pos) {
+        var eye_pos = eye_pos;
+        var t = info.tri;
+        var texture = t.texture;
+        var view_pos = info.view_pos;
+        var lights = info.lights;
+        const w = info.z_correction;
         const p1 = t.v[0].position;
         const p2 = t.v[1].position;
         const p3 = t.v[2].position;
+        const n1 = t.v[0].normal;
+        const n2 = t.v[1].normal;
+        const n3 = t.v[2].normal;
+        const v1 = view_pos[0];
+        const v2 = view_pos[1];
+        const v3 = view_pos[2];
+        const c1 = t.v[0].texture_coordinate;
+        const c2 = t.v[1].texture_coordinate;
+        const c3 = t.v[2].texture_coordinate;
         let x_min = Math.floor(Math.min(p1.x(), p2.x(), p3.x()));
+        if (x_min < 0) {
+            x_min = 0;
+        }
         let x_max = Math.ceil(Math.max(p1.x(), p2.x(), p3.x()));
+        if (x_max >= this.width) {
+            x_max = this.width - 1;
+        }
         let y_min = Math.floor(Math.min(p1.y(), p2.y(), p3.y()));
+        if (y_min < 0) {
+            y_min = 0;
+        }
         let y_max = Math.ceil(Math.max(p1.y(), p2.y(), p3.y()));
+        if (y_max >= this.height) {
+            y_max = this.height - 1;
+        }
         for (let x = x_min; x <= x_max; ++x) {
             for (let y = y_min; y <= y_max; ++y) {
                 let { alpha, bata, gamma } = t.getBarycentric(x, y);
                 if (t.isInsidebyBarycentric(alpha, bata, gamma)) {
-                    let z = p1.z() * alpha + p2.z() * bata + p3.z() * gamma;
+                    let w_reciprocal = 1 / (alpha / w[0] + bata / w[1] + gamma / w[2]);
+                    let z = p1.z() * alpha / w[0] + p2.z() * bata / w[1] + p3.z() * gamma / w[2];
+                    z *= w_reciprocal;
                     let index = this.getIndex(x, y);
                     if (this.z_buffer[index] > z) {
+                        var interpolate_tex_coord;
+                        var interpolate_color = new Color();
+                        if (c1 == null || c2 == null || c3 == null) {
+                            interpolate_tex_coord = new Vector2(0, 0);
+                            interpolate_color = new Color();
+                            console.log("ddd");
+                        }
+                        else {
+                            let u = c1.x() * alpha + c2.x() * bata + c3.x() * gamma;
+                            let v = c1.y() * alpha + c2.y() * bata + c3.y() * gamma;
+                            interpolate_tex_coord = new Vector2(u, v);
+                            /*let color1 = texture.getColor(c1.x(), c1.y())
+                            let color2 = texture.getColor(c2.x(), c2.y())
+                            let color3 = texture.getColor(c3.x(), c3.y())
+                            let interpolate_color = color1.multi(alpha).add(color2.multi(bata).add(color3.multi(gamma)))
+                            interpolate_color.round()*/
+                        }
+                        var interpolate_normal;
+                        {
+                            let x = n1.x() * alpha + n2.x() * bata + n3.x() * gamma;
+                            let y = n1.y() * alpha + n2.y() * bata + n3.y() * gamma;
+                            let z = n1.z() * alpha + n2.z() * bata + n3.z() * gamma;
+                            interpolate_normal = new Vector3(x, y, z);
+                            interpolate_normal.normalized();
+                        }
+                        var interpolate_position;
+                        {
+                            let x = v1.x() * alpha + v2.x() * bata + v3.x() * gamma;
+                            let y = v1.y() * alpha + v2.y() * bata + v3.y() * gamma;
+                            let z = v1.z() * alpha + v2.z() * bata + v3.z() * gamma;
+                            interpolate_position = new Vector3(x, y, z);
+                        }
                         this.z_buffer[index] = z;
-                        this.frame_buffer[x][y] = getColor(t, x, y);
+                        this.frame_buffer[x][y] = shader.shade(new ShadeInfo(interpolate_position, interpolate_normal, interpolate_tex_coord, lights, texture, eye_pos));
                     }
                 }
             }
@@ -291,6 +416,8 @@ class Frame {
     getIndex(x, y) {
         return x * this.width + y;
     }
+    interpolate(alpha, bata, gamma, vec) {
+    }
 }
 class Vertex {
     constructor(position, normal, texture_coordinate) {
@@ -302,7 +429,7 @@ class Vertex {
             this.texture_coordinate = null;
         }*/
         this.position = position;
-        this.normal = normal ? normal : null;
+        this.normal = normal;
         if (texture_coordinate) {
             this.texture_coordinate = texture_coordinate;
         }
@@ -312,19 +439,20 @@ class Vertex {
     }
 }
 class Mesh {
-    constructor(vec, n) {
+    constructor(vec, n, texture) {
         this.v = vec;
         this.normal = n;
+        this.texture = texture;
     }
 }
 class Triangle extends Mesh {
-    constructor(v1, v2, v3) {
+    constructor(v1, v2, v3, texture) {
         let v = [v1, v2, v3];
         let a = Vector.sub(v1.position, v2.position);
         let b = Vector.sub(v2.position, v3.position);
         let normal = Vector3.crossProduct(a, b);
         normal.normalized();
-        super(v, normal);
+        super(v, normal, texture);
     }
     getBarycentric(x, y) {
         let v = [this.v[0].position, this.v[1].position, this.v[2].position];
@@ -341,17 +469,13 @@ class Triangle extends Mesh {
         return !(alpha < -EPSILON || bata < -EPSILON || gamma < -EPSILON);
     }
 }
-class Rectangle extends Mesh {
-    constructor(v1, v2, v3) {
-        let v = [v1, v2, v3];
-        let a = Vector.sub(v1.position, v2.position);
-        let b = Vector.sub(v2.position, v3.position);
-        let normal = Vector3.crossProduct(a, b);
-        normal.normalized();
-        super(v, normal);
-    }
-}
 class ImageLoader {
+}
+class Light {
+    constructor(position, intensity) {
+        this.position = position;
+        this.intensity = intensity;
+    }
 }
 class Material {
     constructor(img_data, name) {
@@ -391,6 +515,17 @@ class Matrix {
             }
         }
         return result;
+    }
+    print() {
+        console.log("Matrix:");
+        for (var i = 0; i < this.r(); ++i) {
+            var str = '';
+            for (var j = 0; j < this.c(); ++j) {
+                str += this.m_[i][j] + ' ';
+            }
+            console.log(str);
+        }
+        console.log();
     }
     val(x, y, value) {
         if (value) {
@@ -489,13 +624,16 @@ class Vector {
             this.v_.val(i, 0, tmp / norm);
         }
     }
-    norm() {
+    squaredNorm() {
         let result = 0;
         let r = this.v_.r();
         for (let i = 0; i < r; ++i) {
             result += Math.pow(this.v_.val(i, 0), 2);
         }
-        return Math.sqrt(result);
+        return result;
+    }
+    norm() {
+        return Math.sqrt(this.squaredNorm());
     }
     static clone(vec) {
         let tmp = new Vector();
@@ -525,7 +663,7 @@ class Vector {
         tmp.v_ = new Matrix(a.v_.r(), 1);
         let r = a.v_.r();
         for (let i = 0; i < r; ++i) {
-            if (b instanceof Number) {
+            if (!(b instanceof Vector)) {
                 tmp.v_.val(i, 0, a.v_.val(i, 0) * b);
             }
             else {
@@ -539,7 +677,7 @@ class Vector {
         tmp.v_ = new Matrix(a.v_.r(), 1);
         let r = a.v_.r();
         for (let i = 0; i < r; ++i) {
-            if (b instanceof Number) {
+            if (!(b instanceof Vector)) {
                 tmp.v_.val(i, 0, a.v_.val(i, 0) / b);
             }
             else {
@@ -576,10 +714,23 @@ class Vector3 extends Vector {
     static dotProduct(a, b) {
         return a.x() * b.x() + a.y() * b.y() + a.z() * b.z();
     }
+    static cwiseProduct(a, b) {
+        return new Vector3(a.x() * b.x(), a.y() * b.y(), a.z() * b.z());
+    }
+    static toVector4(a, w = 1) {
+        return new Vector4(a.x(), a.y(), a.z(), w);
+    }
 }
 class Vector4 extends Vector {
     constructor(x = 0, y = 0, z = 0, w = 0) {
         super(x, y, z, w);
+    }
+    static toVector3(a) {
+        var w = a.w();
+        if (Math.abs(w) < EPSILON) {
+            w = 1;
+        }
+        return new Vector3(a.x() / w, a.y() / w, a.z() / w);
     }
 }
 class Model {
@@ -613,14 +764,16 @@ class ObjLoader {
         const x = line_items.length >= 2 ? parseFloat(line_items[1]) : 0.0;
         const y = line_items.length >= 3 ? parseFloat(line_items[2]) : 0.0;
         const z = line_items.length >= 4 ? parseFloat(line_items[3]) : 0.0;
-        this.model.normals.push(new Vector3(x, y, z));
+        var n = new Vector3(x, y, z);
+        n.normalized();
+        this.model.normals.push(n);
     }
     parseTexture(line_items) {
         const x = line_items.length >= 2 ? parseFloat(line_items[1]) : 0.0;
         const y = line_items.length >= 3 ? parseFloat(line_items[2]) : 0.0;
         this.model.texture_coords.push(new Vector2(x, y));
     }
-    parseMesh(line_items) {
+    parseMesh(line_items, texture) {
         const v_len = line_items.length - 1;
         let v = [];
         for (let i = 1; i <= v_len; ++i) {
@@ -630,9 +783,9 @@ class ObjLoader {
             var c = parseInt(v_infos[2]);
             v.push(new Vertex(this.model.point_coords[a - 1], this.model.normals[c - 1], this.model.texture_coords[b - 1]));
         }
-        this.model.meshes_group.push(new Triangle(v[0], v[1], v[2]));
+        this.model.meshes_group.push(new Triangle(v[0], v[1], v[2], texture));
     }
-    loadModel(obj) {
+    loadModel(obj, texture) {
         let lines = obj.split('\n');
         let len = lines.length;
         for (let i = 0; i < len; ++i) {
@@ -649,7 +802,7 @@ class ObjLoader {
                     this.parseTexture(line_items);
                     break;
                 case "f":
-                    this.parseMesh(line_items);
+                    this.parseMesh(line_items, texture);
                     break;
                 default:
                     break;
@@ -658,6 +811,133 @@ class ObjLoader {
     }
     getModel() {
         return this.model;
+    }
+}
+class Scene {
+    constructor(width = 500, height = 500) {
+        this.models = [];
+        this.camera = new Camera(new Vector3(0, 0, -10), 45, 0.1, 50);
+        this.lights = [];
+        this.shader = new BlinnPhongShader();
+        this.width = width;
+        this.height = height;
+        this.frame = new Frame(width, height);
+        this.lights.push(new Light(new Vector3(20, 20, 20), new Vector3(500, 500, 500)));
+        this.lights.push(new Light(new Vector3(-20, 20, 0), new Vector3(500, 500, 500)));
+    }
+    addModel(model) {
+        this.models.push(model);
+    }
+    drawModels() {
+        for (var model of this.models) {
+            for (var tri of model.meshes_group) {
+                var info = this.tranlate(tri);
+                //console.log(info)
+                this.frame.drawTriangle(info, this.shader, new Vector3(0, 0, 0));
+            }
+        }
+        this.frame.showImage();
+    }
+    tranlate(tri) {
+        var model = this.camera.getModel();
+        var view = this.camera.getView();
+        var proj = this.camera.getProjection();
+        var i_model = this.camera.getInverseTransposeModel();
+        var i_view = this.camera.getInverseTransposeView();
+        var mv = view.multi(model);
+        var mvp = proj.multi(mv);
+        var imv = i_view.multi(i_model);
+        var v = tri.v;
+        var new_v = [];
+        var view_pos = [];
+        var z_correction = [];
+        for (var i = 0; i < 3; ++i) {
+            var p = Vector3.toVector4(v[i].position);
+            var n = Vector3.toVector4(v[i].normal, 0);
+            let vp = mv.multi((p));
+            let proj_p = mvp.multi(p);
+            let new_n = imv.multi(n);
+            let tmp_n = Vector4.toVector3(new_n);
+            tmp_n.normalized();
+            z_correction.push(proj_p.w());
+            new_v.push(new Vertex(Vector4.toVector3(proj_p), tmp_n, v[i].texture_coordinate));
+            view_pos.push(Vector4.toVector3(vp));
+        }
+        var z_far = this.camera.z_far;
+        var z_near = this.camera.z_near;
+        var f1 = (z_far - z_near) / 2;
+        var f2 = (z_far + z_near) / 2;
+        for (var i = 0; i < 3; ++i) {
+            let x = new_v[i].position.x();
+            let y = new_v[i].position.y();
+            let z = new_v[i].position.z();
+            new_v[i].position.x((x + 1) * this.width / 2);
+            new_v[i].position.y((y + 1) * this.height / 2);
+            new_v[i].position.z(z * f1 + f2);
+            new_v[i].normal.normalized();
+        }
+        return new DisplayInfo(new Triangle(new_v[0], new_v[1], new_v[2], tri.texture), view_pos, this.lights, z_correction);
+    }
+}
+class DisplayInfo {
+    constructor(tri, view_pos, lights, z_correction) {
+        this.tri = tri;
+        this.view_pos = view_pos;
+        this.lights = lights;
+        this.z_correction = z_correction;
+    }
+}
+class Shader {
+}
+class BlinnPhongShader extends Shader {
+    shade(info) {
+        var texture = info.texture;
+        var tex_coord = info.tex_coord;
+        var tex_color = texture.getColor(tex_coord.x(), tex_coord.y());
+        var ka = new Vector3(0.00005, 0.00005, 0.00005);
+        var kd = new Vector3(tex_color.red / 255, tex_color.green / 255, tex_color.blue / 255);
+        var ks = new Vector3(0.7937, 0.7937, 0.7937);
+        var eye_pos = info.eye_pos;
+        var point = info.position;
+        var normal = info.normal;
+        var color_vec = new Vector3(0, 0, 0);
+        var p = 150;
+        var lights = info.lights;
+        for (var i = 0; i < lights.length; ++i) {
+            let light = lights[i];
+            let r = Vector.sub(light.position, point);
+            let r2 = r.squaredNorm();
+            //console.log(r2)
+            r.normalized();
+            let diffuse_intensity = Vector.div(light.intensity, r2);
+            diffuse_intensity = Vector3.cwiseProduct(diffuse_intensity, kd);
+            let c = Vector3.dotProduct(normal, r);
+            diffuse_intensity = Vector.multi(diffuse_intensity, Math.max(0, c));
+            let v = Vector.sub(eye_pos, point);
+            v.normalized();
+            let h = Vector.add(v, r);
+            h.normalized();
+            let specular_intensity = Vector.div(light.intensity, r2);
+            specular_intensity = Vector3.cwiseProduct(specular_intensity, ks);
+            specular_intensity = Vector.multi(specular_intensity, Math.max(0, Math.pow(Vector3.dotProduct(normal, h), p)));
+            //specular_intensity=new Vector3(0,0,0)
+            let amb_intensity = Vector3.cwiseProduct(light.intensity, ka);
+            //amb_intensity=new Vector3(0,0,0)
+            let intensity = Vector.add(specular_intensity, diffuse_intensity);
+            //intensity=Vector.add(intensity,amb_intensity);
+            color_vec = Vector.add(color_vec, intensity);
+        }
+        return new Color(color_vec.x() * 255, color_vec.y() * 255, color_vec.z() * 255);
+    }
+}
+class ShadeInfo {
+    constructor(position, normal, tex_coord, lights, texture, eye_pos) {
+        this.position = position;
+        this.normal = normal;
+        this.tex_coord = tex_coord;
+        this.lights = lights;
+        this.texture = texture;
+        this.eye_pos = eye_pos;
     }
 }
 class Texture {
@@ -669,10 +949,22 @@ class Texture {
     getColor(u, v) {
         let tmp = Math.trunc(u);
         u -= tmp;
+        if (u < 0) {
+            u += 1;
+        }
         tmp = Math.trunc(v);
         v -= tmp;
+        if (v < 0) {
+            v += 1;
+        }
         u = Math.round(u * this.width_);
         v = Math.round(v * this.height_);
+        if (u == this.width_) {
+            --u;
+        }
+        if (v == this.height_) {
+            --v;
+        }
         return this.data_[u][v];
     }
 }
@@ -733,7 +1025,7 @@ class ImageTool {
                 //image_data.data[index + 2], image_data.data[index + 3])
             }
         }
-        console.log(image_data.data);
+        //console.log(image_data.data)
         return data;
     }
     static convertImgToData(img) {
@@ -750,4 +1042,4 @@ class ImageTool {
     }
 }
 const EPSILON = 1e-6;
-var count = 0;
+const PI = Math.acos(-1);
