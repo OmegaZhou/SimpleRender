@@ -34,17 +34,14 @@ class Frame {
     width: number;
     height: number;
     antialiasing: Boolean = false;
-    z_buffer: number[];
+    z_buffer: number[]=[];
+    back_color=new Color(245,245,245)
     constructor(width: number, height: number) {
-        for (var i = 0; i < width; ++i) {
-            this.frame_buffer[i] = [];
-            for (var j = 0; j < height; ++j) {
-                this.frame_buffer[i][j] = new Color();
-            }
-        }
-        this.z_buffer = new Array(width * height).fill(Number.MAX_VALUE)
+        Canvas.setWindowSize(width,height)
         this.width = width;
         this.height = height;
+        this.reset()
+        this.showImage()
     }
     checkValid(x: number, y: number): Boolean {
         return x >= 0 && x < this.width && y >= 0 && y < this.height;
@@ -226,7 +223,16 @@ class Frame {
     private getIndex(x: number, y: number) {
         return x * this.width + y
     }
-    private interpolate(alpha: number, bata: number, gamma: number, vec: Vector3 | Vector2 | Color) {
-
+    public reset(){
+        var width=this.width
+        var height=this.height
+        for (var i = 0; i < width; ++i) {
+            this.frame_buffer[i] = [];
+            for (var j = 0; j < height; ++j) {
+                this.frame_buffer[i][j] = this.back_color;
+            }
+        }
+        this.z_buffer = new Array(width * height).fill(Number.MAX_VALUE)
     }
+    
 }

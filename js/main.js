@@ -1,128 +1,27 @@
 "use strict";
 var scene;
+var texture;
 function init() {
-    var p = new Vector4(1, 1, 1, 1);
-    var m = Matrix.createMatrix([[1, 2, 2, 1], [0, 1, 2, 0], [0, 0, 1, 3], [1, 1, 1, 1]]);
-    p = m.multi(p);
-    console.log(p.x(), p.y(), p.z(), p.w());
-    /**var frame = new Frame(300, 300);
-
-    frame.drawLine(new Vector2(0, 0), new Vector2(70, 210), new Color(255, 0, 0));
-    frame.setAntialiase(true)
-    frame.drawLine(new Vector2(30, 0), new Vector2(100, 210), new Color(255, 0, 0));
-    //frame.drawLine(new Vector2(0,1.2),new Vector2(0,280.4),new Color(0,255,0));
-    //frame.drawLine(new Vector2(1.2,0),new Vector2(280.4,0),new Color(255,0,0));
-    frame.showImage();
-    var canvas = <HTMLCanvasElement>document.getElementById("canvas")
-    var context = canvas.getContext("2d")
-    if (context != null) {
-        context.moveTo(60, 300);       //设置起点状态
-        context.lineTo(130, 90);       //设置末端状态
-        context.lineWidth = 1;          //设置线宽状态
-        context.strokeStyle = '#FF0000';  //设置线的颜色状态
-        context.stroke();               //进行绘制
-    }*/
-    /*let frame=new Frame(300,300);
-    var t=new Triangle(new Vertex(new Vector3(10,10,0)),new Vertex(new Vector3(100, 30,0)),new Vertex(new Vector3(190, 160,0)))
-    frame.drawTriangle(t,(t:Triangle,x:number,y:number)=>{
-        return new Color(255,0,0);
-    })
-    frame.showImage();*/
-    /*let ctx=Canvas.getCtx()
-    Canvas.setWindowSize(512,512)
-    ctx.drawImage(<HTMLImageElement>document.getElementById("img"),0,0,512,512)*/
+    scene = new Scene(720, 720);
 }
 function upload() {
-    var e = document.getElementById("model_file");
-    var file;
-    if (e.files) {
-        file = e.files[0];
+    var e1 = document.getElementById("model_file");
+    var e2 = document.getElementById("img_file");
+    var img_file;
+    var obj_file;
+    var obj_name;
+    if (e1.files && e2.files && e1.files.length != 0 && e2.files.length != 0) {
+        obj_file = e1.files[0];
+        obj_name = obj_file.name;
+        img_file = e2.files[0];
     }
     else {
+        showWarnInfo();
         return;
     }
+    scene.reset();
     var file_reader = new FileReader();
-    console.time("Load model");
-    file_reader.readAsBinaryString(file);
-    file_reader.onload = (e) => {
-        var str = new String(file_reader.result);
-        let loader = new ObjLoader();
-        loader.loadModel(str, texture);
-        let model = loader.getModel();
-        console.timeEnd("Load model");
-        let group = model.meshes_group;
-        let width = 720;
-        let height = 720;
-        var scene = new Scene(width, height);
-        scene.addModel(model);
-        //console.log("sss")
-        scene.drawModels();
-    };
-    /*var frame = new Frame(width, height);
-    //frame.setAntialiase(true)
-    for (let i=0; i<group.length; i++) {
-        
-        for (let j=0; j<3; j++) {
-            let v0 = group[i].v[j]
-            let v1 = group[i].v[(j+1)%3];
-            let x0 = (v0.position.x()+1)*width/2.;
-            let y0 = (v0.position.y()+1.)*height/2.;
-            let x1 = (v1.position.x()+1.)*width/2.;
-            let y1 = (v1.position.y()+1.)*height/2.;
-            frame.drawLine(new Vector2(x0,y0),new Vector2(x1,y1),new Color(0,0,0));
-        }
-        let v=[]
-        
-        for (let j=0; j<3; j++) {
-            let v0 = group[i].v[j]
-            let x0 = (v0.position.x()+1.)*width/2.;
-            let y0 = (v0.position.y()+1.)*height/2.;
-            v.push(new Vertex(new Vector3(x0,y0,v0.position.z()),v0.normal,v0.texture_coordinate))
-        }
-        //console.log(v)
-        let t:Triangle=new Triangle(v[0],v[1],v[2],texture)
-        //let color=new Color(Math.random()*255,Math.random()*255,Math.random()*255);
-        //let color=new Color(255,0,0)
-        frame.drawTriangle(t,(t:Triangle,x:number,y:number)=>{
-            const p1=t.v[0].position;
-            const p2=t.v[1].position;
-            const p3=t.v[2].position;
-            const c1=t.v[0].texture_coordinate
-            const c2=t.v[1].texture_coordinate
-            const c3=t.v[2].texture_coordinate
-            let {alpha,bata,gamma}=t.getBarycentric(x,y);
-            if(c1==null||c2==null||c3==null){
-                return new Color()
-            }else{
-                let color1=texture.getColor(c1.x(),c1.y())
-                let color2=texture.getColor(c2.x(),c2.y())
-                let color3=texture.getColor(c3.x(),c3.y())
-                let result=color1.multi(alpha).add(color2.multi(bata).add(color3.multi(gamma)))
-                result.round();
-                return result
-                let u=c1.x()*alpha+c2.x()*bata+c3.x()*gamma
-                let v=c1.y()*alpha+c2.y()*bata+c3.y()*gamma
-                return texture.getColor(u,v);
-            }
-        })
-    }
-    frame.showImage()
-    //console.log(file_reader.result)
-}
-//console.log(file)*/
-}
-var texture;
-function uploadImg() {
-    var e = document.getElementById("img_file");
-    var file;
-    if (e.files) {
-        file = e.files[0];
-    }
-    else {
-        return;
-    }
-    var file_reader = new FileReader();
-    file_reader.readAsDataURL(file);
+    file_reader.readAsDataURL(img_file);
     file_reader.onload = (e) => {
         let img = document.createElement("img");
         if (e.target == null) {
@@ -134,20 +33,193 @@ function uploadImg() {
             let h = img.naturalHeight;
             let data = ImageTool.convertImgToData(img);
             texture = new Texture(data, w, h);
+            var file_reader2 = new FileReader();
+            file_reader2.readAsBinaryString(obj_file);
+            file_reader2.onload = (e) => {
+                var str = new String(file_reader2.result);
+                let loader = new ObjLoader();
+                loader.loadModel(str, texture);
+                let model = loader.getModel();
+                scene.addModel(model);
+                loadSccess(obj_name);
+                //console.log("sss")
+            };
         };
     };
+    clearModal();
+    closeModal();
+}
+function showWarnInfo() {
+    $("#warn_info").attr("class", "visible");
+}
+function clearModal() {
+    $("#warn_info").attr("class", "invisible");
+    $("#model_file").val(null);
+    $("#img_file").val(null);
+}
+function closeModal() {
+    $('#model_modal').modal('hide');
+}
+function loadSccess(name) {
+    $("#obj_name").text(name);
+    $("#render").removeClass("invisible");
+}
+function showModel() {
+    scene.clear();
+    scene.drawModels();
+}
+function rotate(type) {
+    var id = "#rotate-" + type;
+    var angle = toNumber(id);
+    if (isNaN(angle)) {
+        console.log("false");
+        return;
+    }
+    scene.rotate(type, angle);
+}
+function scale() {
+    var sc = toNumber("#scale");
+    if (isNaN(sc)) {
+        console.log("false");
+        return;
+    }
+    scene.scale(sc);
+}
+function move() {
+    var x = toNumber("#move-x");
+    var y = toNumber("#move-y");
+    var z = toNumber("#move-z");
+    if (isNaN(x) || isNaN(y) || isNaN(z)) {
+        console.log("false");
+        return;
+    }
+    scene.move(x, y, z);
+}
+function clearConfig() {
+    scene.clearConfig();
+}
+function addLight() {
+    var p = [];
+    var intensity_a = [];
+    for (var i = 0; i < 3; ++i) {
+        var tmp0 = toNumber('#light-position' + i);
+        var tmp1 = toNumber('#light-intensity' + i);
+        p.push(tmp0);
+        intensity_a.push(tmp1);
+    }
+    for (var i = 0; i < 3; ++i) {
+        var tmp0 = p[i];
+        var tmp1 = intensity_a[i];
+        if (isNaN(tmp0) || isNaN(tmp1)) {
+            console.log("false");
+            return;
+        }
+    }
+    var position = new Vector3(p[0], p[1], p[2]);
+    var intenstiy = new Vector3(intensity_a[0], intensity_a[1], intensity_a[2]);
+    scene.lights.push(new Light(position, intenstiy));
+    showLightList();
+}
+function removeLight() {
+    var index = toNumber('#remove-light');
+    scene.lights.splice(index, 1);
+    showLightList();
+}
+function showLightList() {
+    var lights = scene.lights;
+    var text = '<table class="table"><thead><tr><th scope="col">#</th><th scope="col">位置</th><th scope="col">强度</th></thread>';
+    text += '<tbody>';
+    for (var i = 0; i < lights.length; ++i) {
+        var position = lights[i].position;
+        var intensity = lights[i].intensity;
+        text += '<tr><th scope="row">';
+        text += i;
+        text += '</th>';
+        text += '<th>';
+        text += '(' + position.x() + ',' + position.y() + ',' + position.z() + ')';
+        text += '</th>';
+        text += '<th>';
+        text += '(' + intensity.x() + ',' + intensity.y() + ',' + intensity.z() + ')';
+        text += '</th></tr>';
+    }
+    text += '</tbody></table>';
+    $("#light-list").html(text);
+}
+function lightConfig() {
+    $('#light').modal('show');
+    showLightList();
+}
+function setCamera() {
+    var p = [];
+    for (var i = 0; i < 3; ++i) {
+        var tmp0 = toNumber('#camera-position' + i);
+        p.push(tmp0);
+    }
+    for (var i = 0; i < 3; ++i) {
+        var tmp0 = p[i];
+        if (isNaN(tmp0)) {
+            console.log("false");
+            return;
+        }
+    }
+    scene.setCameraPosition(new Vector3(p[0], p[1], p[2]));
+}
+function toNumber(id) {
+    var re = parseFloat($(id).val());
+    $(id).val(null);
+    return re;
+}
+function setShader() {
+    var e = document.getElementById("shader_file");
+    var shader_file;
+    if (e.files && e.files.length != 0) {
+        shader_file = e.files[0];
+    }
+    else {
+        return;
+    }
+    var file_reader = new FileReader();
+    file_reader.readAsBinaryString(shader_file);
+    file_reader.onload = (e) => {
+        var str = new String(file_reader.result);
+        {
+            let shader = new BlinnPhongShader();
+            let name = $("#shader-name").val();
+            $("#shader-name").val(null);
+            if (!name) {
+                name = "MyShader";
+            }
+            let code = "scene.shader=new " + name + "()";
+            eval(str.toString() + '\n' + code);
+        }
+        //console.log("sss")
+    };
+    $("#shader_file").val(null);
+    $('#shader-config').modal('hide');
 }
 class Camera {
     constructor(position, eye_fov, z_near, z_far) {
-        this.position = Vector.clone(position);
-        this.model_matrix = Matrix.createMatrix([[2.5, 0, 0, 0], [0, 2.5, 0, 0], [0, 0, 2.5, 0], [0, 0, 0, 1]]);
-        this.inverse_transpose_model = Matrix.createMatrix([[1 / 2.5, 0, 0, 0], [0, 1 / 2.5, 0, 0], [0, 0, 1 / 2.5, 0], [0, 0, 0, 1]]);
+        this.origin_position = position;
         this.eye_fov = eye_fov;
         this.z_near = z_near;
         this.z_far = z_far;
-        this.setProjection(eye_fov, z_near, z_far, 1);
-        this.setView(this.position);
-        this.rotationByY(40);
+        this.init();
+    }
+    init() {
+        this.model_matrix = Matrix.createMatrix([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]);
+        this.inverse_transpose_model = Matrix.createMatrix([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]);
+        this.setProjection(this.eye_fov, this.z_near, this.z_far, 1);
+        this.setPosition(this.origin_position);
+        this.rotationByY(180);
+        this.scale(2.5);
+    }
+    rotationByX(angle) {
+        angle = angle / 180 * PI;
+        var cos_v = Math.cos(angle);
+        var sin_v = Math.sin(angle);
+        var model = Matrix.createMatrix([[1, 0, 0, 0], [0, cos_v, -sin_v, 0], [0, sin_v, cos_v, 0], [0, 0, 0, 1]]);
+        var inverse_transpose_model = Matrix.createMatrix([[1, 0, 0, 0], [0, cos_v, -sin_v, 0], [0, sin_v, cos_v, 0], [0, 0, 0, 1]]);
+        this.setModel(model, inverse_transpose_model);
     }
     rotationByY(angle) {
         angle = angle / 180 * PI;
@@ -155,8 +227,25 @@ class Camera {
         var sin_v = Math.sin(angle);
         var model = Matrix.createMatrix([[cos_v, 0, sin_v, 0], [0, 1, 0, 0], [-sin_v, 0, cos_v, 0], [0, 0, 0, 1]]);
         var inverse_transpose_model = Matrix.createMatrix([[cos_v, 0, sin_v, 0], [0, 1, 0, 0], [-sin_v, 0, cos_v, 0], [0, 0, 0, 1]]);
-        this.model_matrix = model.multi(this.model_matrix);
-        this.inverse_transpose_model = inverse_transpose_model.multi(this.inverse_transpose_model);
+        this.setModel(model, inverse_transpose_model);
+    }
+    rotationByZ(angle) {
+        angle = angle / 180 * PI;
+        var cos_v = Math.cos(angle);
+        var sin_v = Math.sin(angle);
+        var model = Matrix.createMatrix([[cos_v, -sin_v, 0, 0], [sin_v, cos_v, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]);
+        var inverse_transpose_model = Matrix.createMatrix([[cos_v, -sin_v, 0, 0], [sin_v, cos_v, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]);
+        this.setModel(model, inverse_transpose_model);
+    }
+    scale(scale) {
+        var model = Matrix.createMatrix([[scale, 0, 0, 0], [0, scale, 0, 0], [0, 0, scale, 0], [0, 0, 0, 1]]);
+        var inverse_transpose_model = Matrix.createMatrix([[1 / scale, 0, 0, 0], [0, 1 / scale, 0, 0], [0, 0, 1 / scale, 0], [0, 0, 0, 1]]);
+        this.setModel(model, inverse_transpose_model);
+    }
+    move(x, y, z) {
+        var model = Matrix.createMatrix([[1, 0, 0, x], [0, 1, 0, y], [0, 0, 1, z], [0, 0, 0, 1]]);
+        var inverse_transpose_model = Matrix.createMatrix([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [-x, -y, -z, 1]]);
+        this.setModel(model, inverse_transpose_model);
     }
     setProjection(eye_fov, z_near, z_far, aspect_ratio) {
         var angle = eye_fov / 180 * PI;
@@ -169,16 +258,9 @@ class Camera {
         var ortho = Matrix.createMatrix([[2 / width, 0, 0, 0], [0, 2 / high, 0, 0], [0, 0, 2 / length, 0], [0, 0, 0, 1]]);
         this.proj = ortho.multi(move).multi(proj);
     }
-    setView(position) {
-        var x = position.x();
-        var y = position.y();
-        var z = position.z();
-        this.view = Matrix.createMatrix([[1, 0, 0, -x], [0, 1, 0, -y], [0, 0, 1, -z], [0, 0, 0, 1]]);
-        this.inverse_view = Matrix.createMatrix([[1, 0, 0, x], [0, 1, 0, y], [0, 0, 1, z], [0, 0, 0, 1]]);
-        this.inverse_transpose_view = Matrix.createMatrix([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [x, y, z, 1]]);
-    }
     setPosition(new_position) {
         this.position = Vector.clone(new_position);
+        this.setView(this.position);
     }
     getProjection() {
         return this.proj;
@@ -197,6 +279,18 @@ class Camera {
     }
     getPosition() {
         return this.position;
+    }
+    setModel(model, inverse_transpose_model) {
+        this.model_matrix = model.multi(this.model_matrix);
+        this.inverse_transpose_model = inverse_transpose_model.multi(this.inverse_transpose_model);
+    }
+    setView(position) {
+        var x = position.x();
+        var y = position.y();
+        var z = position.z();
+        this.view = Matrix.createMatrix([[1, 0, 0, -x], [0, 1, 0, -y], [0, 0, 1, -z], [0, 0, 0, 1]]);
+        this.inverse_view = Matrix.createMatrix([[1, 0, 0, x], [0, 1, 0, y], [0, 0, 1, z], [0, 0, 0, 1]]);
+        this.inverse_transpose_view = Matrix.createMatrix([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [x, y, z, 1]]);
     }
 }
 class Color {
@@ -228,15 +322,13 @@ class Frame {
     constructor(width, height) {
         this.frame_buffer = [];
         this.antialiasing = false;
-        for (var i = 0; i < width; ++i) {
-            this.frame_buffer[i] = [];
-            for (var j = 0; j < height; ++j) {
-                this.frame_buffer[i][j] = new Color();
-            }
-        }
-        this.z_buffer = new Array(width * height).fill(Number.MAX_VALUE);
+        this.z_buffer = [];
+        this.back_color = new Color(245, 245, 245);
+        Canvas.setWindowSize(width, height);
         this.width = width;
         this.height = height;
+        this.reset();
+        this.showImage();
     }
     checkValid(x, y) {
         return x >= 0 && x < this.width && y >= 0 && y < this.height;
@@ -416,7 +508,16 @@ class Frame {
     getIndex(x, y) {
         return x * this.width + y;
     }
-    interpolate(alpha, bata, gamma, vec) {
+    reset() {
+        var width = this.width;
+        var height = this.height;
+        for (var i = 0; i < width; ++i) {
+            this.frame_buffer[i] = [];
+            for (var j = 0; j < height; ++j) {
+                this.frame_buffer[i][j] = this.back_color;
+            }
+        }
+        this.z_buffer = new Array(width * height).fill(Number.MAX_VALUE);
     }
 }
 class Vertex {
@@ -468,8 +569,6 @@ class Triangle extends Mesh {
     isInsidebyBarycentric(alpha, bata, gamma) {
         return !(alpha < -EPSILON || bata < -EPSILON || gamma < -EPSILON);
     }
-}
-class ImageLoader {
 }
 class Light {
     constructor(position, intensity) {
@@ -822,8 +921,47 @@ class Scene {
         this.width = width;
         this.height = height;
         this.frame = new Frame(width, height);
-        this.lights.push(new Light(new Vector3(20, 20, 20), new Vector3(500, 500, 500)));
-        this.lights.push(new Light(new Vector3(-20, 20, 0), new Vector3(500, 500, 500)));
+        this.lights.push(new Light(new Vector3(20, 20, 20), new Vector3(1300, 1300, 1300)));
+        this.lights.push(new Light(new Vector3(-20, 20, 0), new Vector3(1300, 1300, 1300)));
+    }
+    setCameraPosition(position) {
+        this.camera.setPosition(position);
+    }
+    reset() {
+        this.models = [];
+        this.frame.reset();
+        this.clearConfig();
+    }
+    clear() {
+        this.frame.reset();
+    }
+    clearConfig() {
+        this.camera.init();
+        this.lights = [];
+        this.lights.push(new Light(new Vector3(20, 20, 20), new Vector3(1300, 1300, 1300)));
+        this.lights.push(new Light(new Vector3(-20, 20, 0), new Vector3(1300, 1300, 1300)));
+        this.shader = new BlinnPhongShader();
+    }
+    scale(sc) {
+        this.camera.scale(sc);
+    }
+    move(x, y, z) {
+        this.camera.move(x, y, z);
+    }
+    rotate(type, angle) {
+        switch (type) {
+            case 0:
+                this.camera.rotationByX(angle);
+                break;
+            case 1:
+                this.camera.rotationByY(angle);
+                break;
+            case 2:
+                this.camera.rotationByZ(angle);
+                break;
+            default:
+                break;
+        }
     }
     addModel(model) {
         this.models.push(model);
