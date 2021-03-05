@@ -3,6 +3,15 @@ var scene;
 var texture;
 function init() {
     scene = new Scene(720, 720);
+    $("#antialiasing").bootstrapSwitch({
+        onText: "ON",
+        offText: "OFF",
+        onColor: "success",
+        offColor: "danger",
+        onSwitchChange: function (event, state) {
+            scene.frame.setAntialiase(state);
+        }
+    });
 }
 function upload() {
     var e1 = document.getElementById("model_file");
@@ -122,6 +131,9 @@ function addLight() {
 }
 function removeLight() {
     var index = toNumber('#remove-light');
+    if (isNaN(index)) {
+        return;
+    }
     scene.lights.splice(index, 1);
     showLightList();
 }
@@ -196,6 +208,17 @@ function setShader() {
     };
     $("#shader_file").val(null);
     $('#shader-config').modal('hide');
+}
+function setSSAATimes(times) {
+    var num = toNumber("#ssaa_times");
+    if (isNaN(num)) {
+        return;
+    }
+    if (num < 2) {
+        num = 2;
+    }
+    num = Math.round(num);
+    scene.frame.setSSAATimes(num);
 }
 class Camera {
     constructor(position, eye_fov, z_near, z_far) {
@@ -321,9 +344,11 @@ class Color {
 class Frame {
     constructor(width, height) {
         this.frame_buffer = [];
+        this.ssaa_buffer = [];
         this.antialiasing = false;
         this.z_buffer = [];
         this.back_color = new Color(245, 245, 245);
+        this.ssaa_times = 2;
         Canvas.setWindowSize(width, height);
         this.width = width;
         this.height = height;
@@ -334,6 +359,20 @@ class Frame {
         return x >= 0 && x < this.width && y >= 0 && y < this.height;
     }
     showImage() {
+        if (this.antialiasing) {
+            for (var i = 0; i < this.width; ++i) {
+                for (var j = 0; j < this.height; ++j) {
+                    var color = new Color(0, 0, 0);
+                    for (var m = 0; m < this.ssaa_times; ++m) {
+                        for (var n = 0; n < this.ssaa_times; ++n) {
+                            color = color.add(this.ssaa_buffer[i * this.ssaa_times + m][j * this.ssaa_times + n]);
+                        }
+                    }
+                    color = color.multi(1 / this.ssaa_times / this.ssaa_times);
+                    this.frame_buffer[i][j] = color;
+                }
+            }
+        }
         Canvas.showImage(this);
     }
     setPixel(x, y, color) {
@@ -350,6 +389,9 @@ class Frame {
         else {
             return new Color();
         }
+    }
+    setSSAATimes(times) {
+        this.ssaa_times = Math.round(times);
     }
     setAntialiase(b) {
         this.antialiasing = b;
@@ -447,6 +489,18 @@ class Frame {
         if (y_max >= this.height) {
             y_max = this.height - 1;
         }
+        if (this.antialiasing) {
+            x_min *= this.ssaa_times;
+            x_max *= this.ssaa_times;
+            y_min *= this.ssaa_times;
+            y_max *= this.ssaa_times;
+            for (var i = 0; i < 3; ++i) {
+                let x = t.v[i].position.x();
+                let y = t.v[i].position.y();
+                t.v[i].position.x(x * this.ssaa_times);
+                t.v[i].position.y(y * this.ssaa_times);
+            }
+        }
         for (let x = x_min; x <= x_max; ++x) {
             for (let y = y_min; y <= y_max; ++y) {
                 let { alpha, bata, gamma } = t.getBarycentric(x, y);
@@ -461,7 +515,6 @@ class Frame {
                         if (c1 == null || c2 == null || c3 == null) {
                             interpolate_tex_coord = new Vector2(0, 0);
                             interpolate_color = new Color();
-                            console.log("ddd");
                         }
                         else {
                             let u = c1.x() * alpha + c2.x() * bata + c3.x() * gamma;
@@ -489,7 +542,12 @@ class Frame {
                             interpolate_position = new Vector3(x, y, z);
                         }
                         this.z_buffer[index] = z;
-                        this.frame_buffer[x][y] = shader.shade(new ShadeInfo(interpolate_position, interpolate_normal, interpolate_tex_coord, lights, texture, eye_pos));
+                        if (this.antialiasing) {
+                            this.ssaa_buffer[x][y] = shader.shade(new ShadeInfo(interpolate_position, interpolate_normal, interpolate_tex_coord, lights, texture, eye_pos));
+                        }
+                        else {
+                            this.frame_buffer[x][y] = shader.shade(new ShadeInfo(interpolate_position, interpolate_normal, interpolate_tex_coord, lights, texture, eye_pos));
+                        }
                     }
                 }
             }
@@ -506,7 +564,16 @@ class Frame {
         this.setPixel(x, y, my_color);
     }
     getIndex(x, y) {
-        return x * this.width + y;
+        if (this.antialiasing) {
+            return x * this.width * this.ssaa_times + y;
+        }
+        else {
+            return x * this.width + y;
+        }
+    }
+    clearAntialiaseConfig() {
+        this.antialiasing = false;
+        this.ssaa_times = 2;
     }
     reset() {
         var width = this.width;
@@ -517,7 +584,18 @@ class Frame {
                 this.frame_buffer[i][j] = this.back_color;
             }
         }
-        this.z_buffer = new Array(width * height).fill(Number.MAX_VALUE);
+        for (var i = 0; i < width * this.ssaa_times; ++i) {
+            this.ssaa_buffer[i] = [];
+            for (var j = 0; j < height * this.ssaa_times; ++j) {
+                this.ssaa_buffer[i][j] = this.back_color;
+            }
+        }
+        if (this.antialiasing) {
+            this.z_buffer = new Array(width * height * this.ssaa_times * this.ssaa_times).fill(Number.MAX_VALUE);
+        }
+        else {
+            this.z_buffer = new Array(width * height).fill(Number.MAX_VALUE);
+        }
     }
 }
 class Vertex {
@@ -936,6 +1014,7 @@ class Scene {
         this.frame.reset();
     }
     clearConfig() {
+        this.frame.clearAntialiaseConfig();
         this.camera.init();
         this.lights = [];
         this.lights.push(new Light(new Vector3(20, 20, 20), new Vector3(1300, 1300, 1300)));

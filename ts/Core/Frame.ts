@@ -9,10 +9,10 @@ class Color {
         this.green = Math.min(Math.max(0,green),255);
         this.blue = Math.min(Math.max(0,blue),255);
         this.alpha = Math.min(Math.max(0,alpha),255);*/
-        this.red=red
-        this.green=green
-        this.blue=blue
-        this.alpha=alpha
+        this.red = red
+        this.green = green
+        this.blue = blue
+        this.alpha = alpha
         this.round()
     }
     add(color: Color) {
@@ -31,13 +31,15 @@ class Color {
 
 class Frame {
     frame_buffer: Color[][] = [];
+    ssaa_buffer: Color[][] = [];
     width: number;
     height: number;
     antialiasing: Boolean = false;
-    z_buffer: number[]=[];
-    back_color=new Color(245,245,245)
+    z_buffer: number[] = [];
+    back_color = new Color(245, 245, 245)
+    ssaa_times = 2;
     constructor(width: number, height: number) {
-        Canvas.setWindowSize(width,height)
+        Canvas.setWindowSize(width, height)
         this.width = width;
         this.height = height;
         this.reset()
@@ -47,6 +49,20 @@ class Frame {
         return x >= 0 && x < this.width && y >= 0 && y < this.height;
     }
     showImage() {
+        if (this.antialiasing) {
+            for (var i = 0; i < this.width; ++i) {
+                for (var j = 0; j < this.height; ++j) {
+                    var color: Color = new Color(0, 0, 0);
+                    for (var m = 0; m < this.ssaa_times; ++m) {
+                        for (var n = 0; n < this.ssaa_times; ++n) {
+                            color = color.add(this.ssaa_buffer[i * this.ssaa_times + m][j * this.ssaa_times + n]);
+                        }
+                    }
+                    color = color.multi(1 / this.ssaa_times / this.ssaa_times)
+                    this.frame_buffer[i][j] = color
+                }
+            }
+        }
         Canvas.showImage(this)
     }
     setPixel(x: number, y: number, color: Color) {
@@ -63,6 +79,9 @@ class Frame {
             return new Color();
         }
 
+    }
+    setSSAATimes(times: number) {
+        this.ssaa_times = Math.round(times)
     }
     setAntialiase(b: Boolean) {
         this.antialiasing = b;
@@ -126,13 +145,13 @@ class Frame {
         }
 
     }
-    drawTriangle(info: DisplayInfo, shader: Shader,eye_pos:Vector3) {
-        var eye_pos=eye_pos
+    drawTriangle(info: DisplayInfo, shader: Shader, eye_pos: Vector3) {
+        var eye_pos = eye_pos
         var t = info.tri;
-        var texture=t.texture
+        var texture = t.texture
         var view_pos = info.view_pos
         var lights = info.lights
-        const w=info.z_correction
+        const w = info.z_correction
         const p1 = t.v[0].position;
         const p2 = t.v[1].position;
         const p3 = t.v[2].position;
@@ -146,36 +165,47 @@ class Frame {
         const c2 = t.v[1].texture_coordinate
         const c3 = t.v[2].texture_coordinate
         let x_min = Math.floor(Math.min(p1.x(), p2.x(), p3.x()));
-        if(x_min<0){
-            x_min=0;
+        if (x_min < 0) {
+            x_min = 0;
         }
         let x_max = Math.ceil(Math.max(p1.x(), p2.x(), p3.x()));
-        if(x_max>=this.width){
-            x_max=this.width-1;
+        if (x_max >= this.width) {
+            x_max = this.width - 1;
         }
         let y_min = Math.floor(Math.min(p1.y(), p2.y(), p3.y()));
-        if(y_min<0){
-            y_min=0;
+        if (y_min < 0) {
+            y_min = 0;
         }
         let y_max = Math.ceil(Math.max(p1.y(), p2.y(), p3.y()));
-        if(y_max>=this.height){
-            y_max=this.height-1;
+        if (y_max >= this.height) {
+            y_max = this.height - 1;
+        }
+        if (this.antialiasing) {
+            x_min *= this.ssaa_times;
+            x_max *= this.ssaa_times;
+            y_min *= this.ssaa_times;
+            y_max *= this.ssaa_times;
+            for (var i = 0; i < 3; ++i) {
+                let x = t.v[i].position.x()
+                let y = t.v[i].position.y()
+                t.v[i].position.x(x * this.ssaa_times)
+                t.v[i].position.y(y * this.ssaa_times)
+            }
         }
         for (let x = x_min; x <= x_max; ++x) {
             for (let y = y_min; y <= y_max; ++y) {
                 let { alpha, bata, gamma } = t.getBarycentric(x, y);
                 if (t.isInsidebyBarycentric(alpha, bata, gamma)) {
-                    let w_reciprocal=1/(alpha/w[0]+bata/w[1]+gamma/w[2])
-                    let z = p1.z() * alpha/w[0] + p2.z() * bata/w[1] + p3.z() * gamma/w[2]
-                    z*=w_reciprocal;
+                    let w_reciprocal = 1 / (alpha / w[0] + bata / w[1] + gamma / w[2])
+                    let z = p1.z() * alpha / w[0] + p2.z() * bata / w[1] + p3.z() * gamma / w[2]
+                    z *= w_reciprocal;
                     let index = this.getIndex(x, y)
                     if (this.z_buffer[index] > z) {
                         var interpolate_tex_coord: Vector2;
-                        var interpolate_color: Color=new Color();
+                        var interpolate_color: Color = new Color();
                         if (c1 == null || c2 == null || c3 == null) {
                             interpolate_tex_coord = new Vector2(0, 0);
                             interpolate_color = new Color();
-                            console.log("ddd")
                         } else {
                             let u = c1.x() * alpha + c2.x() * bata + c3.x() * gamma
                             let v = c1.y() * alpha + c2.y() * bata + c3.y() * gamma
@@ -202,7 +232,12 @@ class Frame {
                             interpolate_position = new Vector3(x, y, z);
                         }
                         this.z_buffer[index] = z;
-                        this.frame_buffer[x][y] = shader.shade(new ShadeInfo(interpolate_position, interpolate_normal, interpolate_tex_coord, lights,texture,eye_pos))
+                        if (this.antialiasing) {
+                            this.ssaa_buffer[x][y] = shader.shade(new ShadeInfo(interpolate_position, interpolate_normal, interpolate_tex_coord, lights, texture, eye_pos))
+                        } else {
+                            this.frame_buffer[x][y] = shader.shade(new ShadeInfo(interpolate_position, interpolate_normal, interpolate_tex_coord, lights, texture, eye_pos))
+                        }
+
                     }
 
                 }
@@ -221,18 +256,38 @@ class Frame {
         this.setPixel(x, y, my_color);
     }
     private getIndex(x: number, y: number) {
-        return x * this.width + y
+        if (this.antialiasing) {
+            return x * this.width * this.ssaa_times + y
+        } else {
+            return x * this.width + y
+        }
+
     }
-    public reset(){
-        var width=this.width
-        var height=this.height
+    public clearAntialiaseConfig() {
+        this.antialiasing = false
+        this.ssaa_times = 2
+    }
+    public reset() {
+        var width = this.width
+        var height = this.height
         for (var i = 0; i < width; ++i) {
             this.frame_buffer[i] = [];
             for (var j = 0; j < height; ++j) {
                 this.frame_buffer[i][j] = this.back_color;
             }
         }
-        this.z_buffer = new Array(width * height).fill(Number.MAX_VALUE)
+        for (var i = 0; i < width * this.ssaa_times; ++i) {
+            this.ssaa_buffer[i] = [];
+            for (var j = 0; j < height * this.ssaa_times; ++j) {
+                this.ssaa_buffer[i][j] = this.back_color;
+            }
+        }
+        if (this.antialiasing) {
+            this.z_buffer = new Array(width * height * this.ssaa_times * this.ssaa_times).fill(Number.MAX_VALUE)
+        } else {
+            this.z_buffer = new Array(width * height).fill(Number.MAX_VALUE)
+        }
+
     }
-    
+
 }

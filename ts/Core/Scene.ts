@@ -26,6 +26,7 @@ class Scene {
         this.frame.reset()
     }
     clearConfig(){
+        this.frame.clearAntialiaseConfig()
         this.camera.init()
         this.lights=[]
         this.lights.push(new Light(new Vector3(20, 20, 20), new Vector3(1300, 1300, 1300)))

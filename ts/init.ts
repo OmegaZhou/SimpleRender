@@ -3,6 +3,15 @@ var texture: Texture;
 declare var $: any;
 function init() {
     scene = new Scene(720, 720)
+    $("#antialiasing").bootstrapSwitch({  
+        onText:"ON",  
+        offText:"OFF",  
+        onColor:"success",  
+        offColor:"danger",  
+        onSwitchChange:function(event:any,state:boolean){  
+            scene.frame.setAntialiase(state)  
+        }  
+    })
 }
 
 function upload() {
@@ -127,6 +136,9 @@ function addLight() {
 }
 function removeLight() {
     var index = toNumber('#remove-light')
+    if(isNaN(index)){
+        return;
+    }
     scene.lights.splice(index, 1);
     showLightList()
 }
@@ -204,4 +216,14 @@ function setShader() {
     $("#shader_file").val(null)
     $('#shader-config').modal('hide')
 }
-
+function setSSAATimes(times:number){
+    var num=toNumber("#ssaa_times")
+    if(isNaN(num)){
+        return;
+    }
+    if(num<2){
+        num=2;
+    }
+    num=Math.round(num)
+    scene.frame.setSSAATimes(num)
+}
