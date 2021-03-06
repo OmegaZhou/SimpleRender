@@ -194,7 +194,7 @@ class Frame {
         }
         for (let x = x_min; x <= x_max; ++x) {
             for (let y = y_min; y <= y_max; ++y) {
-                let { alpha, bata, gamma } = t.getBarycentric(x, y);
+                let { alpha, bata, gamma } = t.getBarycentric(x + 0.5, y + 0.5);
                 if (t.isInsidebyBarycentric(alpha, bata, gamma)) {
                     let w_reciprocal = 1 / (alpha / w[0] + bata / w[1] + gamma / w[2])
                     let z = p1.z() * alpha / w[0] + p2.z() * bata / w[1] + p3.z() * gamma / w[2]
