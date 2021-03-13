@@ -46,7 +46,12 @@ class Frame {
         this.showImage()
     }
     checkValid(x: number, y: number): Boolean {
-        return x >= 0 && x < this.width && y >= 0 && y < this.height;
+        if(this.antialiasing){
+            return x >= 0 && x < this.width*this.ssaa_times && y >= 0 && y < this.height*this.ssaa_times;
+        }else{
+            return x >= 0 && x < this.width && y >= 0 && y < this.height;
+        }
+        
     }
     showImage() {
         if (this.antialiasing) {
@@ -70,7 +75,12 @@ class Frame {
             return;
         }
         //console.log(x,y,color)
-        this.frame_buffer[x][y] = color;
+        if(this.antialiasing){
+            this.ssaa_buffer[x][y]=color
+        }else{
+            this.frame_buffer[x][y] = color;
+        }
+        
     }
     getColor(x: number, y: number) {
         if (this.checkValid(x, y)) {
@@ -91,6 +101,12 @@ class Frame {
         let x2 = Math.round(p2.x());
         let y1 = Math.round(p1.y());
         let y2 = Math.round(p2.y());
+        if(this.antialiasing){
+            x1*=this.ssaa_times;
+            x2*=this.ssaa_times;
+            y1*=this.ssaa_times;
+            y2*=this.ssaa_times;
+        }
         let steep = false
         if (Math.abs(x1 - x2) < Math.abs(y1 - y2)) {
             [x1, y1] = [y1, x1];
@@ -106,44 +122,45 @@ class Frame {
         let derr = dy * 2;
         let dis = (y1 < y2) ? 1 : -1;
         let error = 0;
-        let need_vague = false
         for (let x = x1, y = y1; x <= x2; ++x) {
             if (!steep) {
                 this.setPixel(x, y, color)
-                if (this.antialiasing) {
-                    if (need_vague) {
-                        this.Vague(x - 1, y);
-                        this.Vague(x, y - dis);
-                        need_vague = false
-                    } else {
-                        this.Vague(x, y - dis);
-                        this.Vague(x, y + dis);
-                    }
-                }
-
-
             } else {
                 this.setPixel(y, x, color)
-                if (this.antialiasing) {
-                    if (need_vague) {
-                        this.Vague(y, x - 1);
-                        this.Vague(y - dis, x);
-                        need_vague = false
-                    } else {
-                        this.Vague(y - dis, x);
-                        this.Vague(y + dis, x);
-                    }
-                }
 
             }
             error += derr;
             if (error > dx) {
-                need_vague = true
                 y += dis;
                 error -= 2 * dx;
             }
         }
 
+    }
+    drawCircle(center:Vector2,r:number,color:Color){
+        var center_x=center.x()
+        var center_y=center.y()
+        var tmp_w=this.antialiasing?this.width*this.ssaa_times:this.width;
+        var tmp_h=this.antialiasing?this.height*this.ssaa_times:this.height;
+        if(this.antialiasing){
+            center_x*=this.ssaa_times
+            center_y*=this.ssaa_times
+            r*=this.ssaa_times;
+        }
+        
+        var x_max=Math.min(center_x+r,tmp_w-1);
+        var y_max=Math.min(center_y+r,tmp_h-1);
+        var x_min=Math.max(center_x-r,0);
+        var y_min=Math.max(center_y-r,0);
+        for(var i=x_min;i<=x_max;++i){
+            for(var j=y_min;j<=y_max;++j){
+                let x=i+0.5-center_x;
+                let y=j+0.5-center_y;
+                if(x*x+y*y<=r*r){
+                    this.setPixel(i,j,color)
+                }
+            }
+        }
     }
     drawTriangle(info: DisplayInfo, shader: Shader, eye_pos: Vector3) {
         var eye_pos = eye_pos
@@ -245,16 +262,7 @@ class Frame {
 
         }
     }
-    private Vague(x: number, y: number) {
-        let my_color = this.getColor(x, y).multi(0.2)
-        let c1 = this.getColor(x - 1, y).multi(0.2)
-        let c2 = this.getColor(x + 1, y).multi(0.2)
-        let c3 = this.getColor(x, y - 1).multi(0.2)
-        let c4 = this.getColor(x - 1, y + 1).multi(0.2)
-        my_color = my_color.add(c1).add(c2).add(c3).add(c4);
-        my_color.round();
-        this.setPixel(x, y, my_color);
-    }
+
     private getIndex(x: number, y: number) {
         if (this.antialiasing) {
             return x * this.width * this.ssaa_times + y
